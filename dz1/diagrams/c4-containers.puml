@@ -1,0 +1,71 @@
+@startuml C4_Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Интернет-магазин — C4 Container
+
+Person(customer, "Клиент", "Заказывает сэндвич с web/mobile")
+Person(staff, "Сотрудник точки", "Готовит заказ, принимает оплату на месте")
+Person(courier, "Курьер", "Доставляет заказ")
+
+System_Boundary(blt, "Интернет-магазин") {
+
+  Container(gateway, "API Gateway", "nginx / Kong", "Единая точка входа для клиентов")
+
+  Container(identity, "Identity Service", "Java/Go + DB", "Пользователи, логин, профиль, адреса")
+  Container(menu, "Menu Service", "Java/Go + DB", "Меню, цены, национальные и локальные акции")
+  Container(store, "Store Service", "Java/Go + DB", "Магазины, часы, зоны доставки, маршруты")
+  Container(order, "Order Service", "Java/Go + DB", "Создание и статусы заказов")
+  Container(payment, "Payment Service", "Java/Go + DB", "Онлайн и офлайн-оплата")
+  Container(delivery, "Delivery Service", "Java/Go + DB", "Назначение курьера, трекинг")
+  Container(notify, "Notification Service", "Java/Go", "Push / SMS / email по событиям заказа")
+  ContainerQueue(mq, "Message Broker", "Kafka / RabbitMQ", "События между сервисами")
+
+  ContainerDb(identityDb, "Identity DB", "PostgreSQL", "users, addresses")
+  ContainerDb(menuDb, "Menu DB", "PostgreSQL", "items, promotions")
+  ContainerDb(storeDb, "Store DB", "PostgreSQL", "stores, schedule")
+  ContainerDb(orderDb, "Order DB", "PostgreSQL", "orders, order_items")
+  ContainerDb(paymentDb, "Payment DB", "PostgreSQL", "payments")
+  ContainerDb(deliveryDb, "Delivery DB", "PostgreSQL", "deliveries")
+}
+
+System_Ext(maps, "Яндекс Карты", "Маршруты и ETA до магазина")
+System_Ext(psp, "Платёжный шлюз", "Эквайринг онлайн-оплаты")
+System_Ext(channels, "Каналы уведомлений", "Push / SMS / email")
+
+Rel(customer, gateway, "заказы, меню, оплата", "HTTPS / REST")
+Rel(staff, gateway, "статус готовности, оплата на месте", "HTTPS / REST")
+Rel(courier, gateway, "статусы доставки", "HTTPS / REST")
+
+Rel(gateway, identity, "логин, профиль")
+Rel(gateway, menu, "меню, акции")
+Rel(gateway, store, "магазины, маршрут")
+Rel(gateway, order, "создание и статус заказа")
+Rel(gateway, payment, "статус / фиксация оплаты")
+Rel(gateway, delivery, "статус доставки")
+
+Rel(menu, store, "storeId для локальных акций", "REST")
+Rel(order, menu, "проверить позиции и цены", "REST")
+Rel(order, store, "магазин, время самовывоза", "REST")
+Rel(order, payment, "инициировать оплату", "REST")
+Rel(order, identity, "проверить userId", "REST")
+Rel(delivery, store, "зона доставки", "REST")
+Rel(notify, identity, "email / phone по userId", "REST")
+
+Rel(order, mq, "шлёт OrderConfirmed/Ready, слушает Payment/Delivery*", "events")
+Rel(payment, mq, "шлёт Payment*, слушает OrderConfirmed", "events")
+Rel(delivery, mq, "слушает OrderReady, шлёт статусы в Order", "events")
+Rel(mq, notify, "уведомить клиента о статусе", "events")
+
+Rel(store, maps, "маршрут / ETA", "HTTPS")
+Rel(payment, psp, "списание / возврат", "HTTPS")
+Rel(notify, channels, "отправить уведомление", "HTTPS")
+
+Rel(identity, identityDb, "чтение / запись")
+Rel(menu, menuDb, "чтение / запись")
+Rel(store, storeDb, "чтение / запись")
+Rel(order, orderDb, "чтение / запись")
+Rel(payment, paymentDb, "чтение / запись")
+Rel(delivery, deliveryDb, "чтение / запись")
+
+SHOW_LEGEND()
+@enduml
