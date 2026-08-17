@@ -1,0 +1,20 @@
+{
+    "name": "nodejs-simple-api-otus",
+    "version": "1.0.0",
+    "description": "Simple Node.js API for OTUS course",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js",
+      "dev": "node --watch server.js"
+    },
+    "keywords": [
+      "nodejs",
+      "express",
+      "otus"
+    ],
+    "author": "Roman Butenko",
+    "license": "ISC",
+    "dependencies": {
+      "express": "^4.21.2"
+    }
+  }
