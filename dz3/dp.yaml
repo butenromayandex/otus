@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: otus-roma-dz
+  name: api-deployment
+  labels:
+    app: api-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: node
+  template:
+    metadata:
+      labels:
+        app: node
+    spec:
+      containers:
+        - name: node
+          image: butenroma/otus-api:0.0.1
+          ports:
+            - containerPort: 8000
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 10
+            periodSeconds: 5
+          livenessProbe:
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            httpGet:
+              path: /health
+              port: 8000
+              httpHeaders:
+              - name: X-App-Version
+                value: 0.0.1
+          
+     
