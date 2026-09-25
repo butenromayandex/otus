@@ -1,0 +1,142 @@
+openapi: 3.0.3
+info:
+  title: dz4-otus-api
+  description: Проверка API — Users REST API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /users:
+    get:
+      summary: Получить список пользователей
+      operationId: getUsers
+      tags:
+        - Users
+      responses:
+        '200':
+          description: Список пользователей (пустой массив)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      summary: Создать нового пользователя
+      operationId: createUser
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Невалидный входной данные
+
+  /users/{userId}:
+    put:
+      summary: Обновить пользователя
+      operationId: updateUser
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '200':
+          description: Пользователь успешно обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+
+    delete:
+      summary: Удалить пользователя
+      operationId: deleteUser
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Пользователь успешно удалён
+        '204':
+          description: Пользователь удалён (بدون محتوى)
+        '404':
+          description: Пользователь не найден
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - age
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Уникальный идентификатор пользователя
+        name:
+          type: string
+          example: "Иван Петров"
+          description: Полное имя пользователя
+        email:
+          type: string
+          format: email
+          example: "ivan@example.com"
+          description: Электронная почта пользователя
+        age:
+          type: integer
+          example: 25
+          description: Возраст пользователя
+
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+        - email
+        - age
+      properties:
+        name:
+          type: string
+          example: "Иван Петров"
+        email:
+          type: string
+          format: email
+          example: "ivan@example.com"
+        age:
+          type: integer
+          example: 25

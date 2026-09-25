@@ -1,0 +1,22 @@
+{
+	"biome.configurationPath": "./dz3/api/biome.json",
+	"biome.lsp.bin": "./dz3/api/node_modules/@biomejs/biome/bin/biome",
+	"eslint.enable": false,
+	"prettier.enable": false,
+	"editor.formatOnSave": true,
+	"editor.formatOnSaveMode": "file",
+	"editor.defaultFormatter": "biomejs.biome",
+	"editor.codeActionsOnSave": {
+		"source.fixAll.biome": "explicit",
+		"source.organizeImports.biome": "never"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	}
+}
