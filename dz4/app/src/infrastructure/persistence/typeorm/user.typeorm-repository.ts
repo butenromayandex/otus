@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { QueryFailedError, Repository } from 'typeorm'
+import { QueryFailedError, type Repository } from 'typeorm'
 import {
   EmailAlreadyExistsError,
   UserNotFoundError,
 } from '../../../domain/user/user.errors'
-import { User } from '../../../domain/user/user'
+import type { User } from '../../../domain/user/user'
 import { UserRepository } from '../../../domain/user/user.repository'
 import { UserMapper } from './user.mapper'
 import { UserOrmEntity } from './user.orm-entity'

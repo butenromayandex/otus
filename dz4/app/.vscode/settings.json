@@ -3,7 +3,6 @@
   "prettier.enable": false,
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
-  "editor.defaultFormatter": "biomejs.biome",
   "javascript.preferences.preferTypeOnlyAutoImports": false,
   "editor.codeActionsOnSave": {
     "source.fixAll.biome": "explicit",

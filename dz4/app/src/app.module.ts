@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { DatabaseModule } from './infrastructure/persistence/typeorm/database.module'
+import { HealthController } from './presentation/health/health.controller'
 import { UsersModule } from './users.module'
 
 @Module({
@@ -14,7 +15,7 @@ import { UsersModule } from './users.module'
     DatabaseModule,
     UsersModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}
