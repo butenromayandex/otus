@@ -50,18 +50,12 @@ app.kubernetes.io/name: {{ include "chart.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Postgres selector labels (не пересекаются с app Deployment)
-*/}}
 {{- define "chart.postgres.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "chart.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: postgres
 {{- end }}
 
-{{/*
-Postgres common labels
-*/}}
 {{- define "chart.postgres.labels" -}}
 helm.sh/chart: {{ include "chart.chart" . }}
 {{ include "chart.postgres.selectorLabels" . }}

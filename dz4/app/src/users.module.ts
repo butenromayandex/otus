@@ -26,4 +26,3 @@ import { UsersController } from './presentation/users/users.controller'
   ],
 })
 export class UsersModule {}
-

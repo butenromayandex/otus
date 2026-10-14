@@ -1,23 +1,58 @@
 openapi: 3.0.3
 info:
   title: dz4-otus-api
-  description: Проверка API — Users REST API
+  description: Users REST API (OTUS dz4)
   version: 1.0.0
 
 servers:
+  - url: http://arch.homework
+    description: Ingress (minikube + tunnel)
   - url: http://localhost:3000
-    description: Local development server
+    description: Local development
 
 paths:
+  /healthz:
+    get:
+      summary: Health check
+      operationId: healthz
+      tags:
+        - Health
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    example: OK
+
+  /stats:
+    get:
+      summary: Статистика (число пользователей)
+      operationId: getStats
+      tags:
+        - Stats
+      responses:
+        '200':
+          description: Статистика
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+
   /users:
     get:
-      summary: Получить список пользователей
+      summary: Список пользователей
       operationId: getUsers
       tags:
         - Users
       responses:
         '200':
-          description: Список пользователей (пустой массив)
+          description: Список пользователей
           content:
             application/json:
               schema:
@@ -25,7 +60,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
     post:
-      summary: Создать нового пользователя
+      summary: Создать пользователя
       operationId: createUser
       tags:
         - Users
@@ -34,109 +69,124 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUserRequest'
+              $ref: '#/components/schemas/UserBody'
       responses:
         '201':
-          description: Пользователь успешно создан
+          description: Создан
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
         '400':
-          description: Невалидный входной данные
+          description: Невалидные данные
+        '409':
+          description: Email уже занят
 
   /users/{userId}:
+    get:
+      summary: Получить пользователя
+      operationId: getUser
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Не найден
     put:
       summary: Обновить пользователя
       operationId: updateUser
       tags:
         - Users
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/UserId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUserRequest'
+              $ref: '#/components/schemas/UserBody'
       responses:
         '200':
-          description: Пользователь успешно обновлён
+          description: Обновлён
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '400':
+          description: Невалидные данные
         '404':
-          description: Пользователь не найден
-
+          description: Не найден
+        '409':
+          description: Email уже занят
     delete:
       summary: Удалить пользователя
       operationId: deleteUser
       tags:
         - Users
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/UserId'
       responses:
-        '200':
-          description: Пользователь успешно удалён
         '204':
-          description: Пользователь удалён (بدون محتوى)
+          description: Удалён
         '404':
-          description: Пользователь не найден
+          description: Не найден
 
 components:
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
   schemas:
     User:
       type: object
-      required:
-        - id
-        - name
-        - email
-        - age
+      required: [id, name, email, age]
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
-          description: Уникальный идентификатор пользователя
         name:
           type: string
-          example: "Иван Петров"
-          description: Полное имя пользователя
+          example: Roma Test
         email:
           type: string
           format: email
-          example: "ivan@example.com"
-          description: Электронная почта пользователя
+          example: roma@example.com
         age:
           type: integer
-          example: 25
-          description: Возраст пользователя
+          example: 30
 
-    CreateUserRequest:
+    UserBody:
       type: object
-      required:
-        - name
-        - email
-        - age
+      required: [name, email, age]
       properties:
         name:
           type: string
-          example: "Иван Петров"
+          example: Roma Test
         email:
           type: string
           format: email
-          example: "ivan@example.com"
+          example: roma@example.com
         age:
           type: integer
-          example: 25
+          example: 30
+
+    Stats:
+      type: object
+      required: [usersCount]
+      properties:
+        usersCount:
+          type: integer
+          example: 3

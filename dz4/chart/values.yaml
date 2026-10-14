@@ -41,7 +41,7 @@ postgres:
   replicas: 1
   persistence:
     enabled: true
-    storageClass: dz4-storage
+    storageClass: standard
     accessModes:
     - ReadWriteOnce
     size: 1Gi

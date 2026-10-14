@@ -4,13 +4,20 @@ metadata:
   name: dz4
 build:
   artifacts:
-    - image: api
-      context: app
-      docker:
-        dockerfile: Dockerfile
-manifests:
-  rawYaml:
-    - k8s/pg.yaml
-    - k8s/migrate-job.yaml
+  - image: butenroma/dz4-users
+    context: app
+    docker:
+      dockerfile: Dockerfile
+  local:
+    push: false
 deploy:
-  kubectl: {}
+  helm:
+    releases:
+    - name: homework
+      chartPath: chart
+      setValues:
+        postgres.password: qwerty
+        image.pullPolicy: IfNotPresent
+      setValueTemplates:
+        image.repository: "{{.IMAGE_REPO_butenroma_dz4_users}}"
+        image.tag: "{{.IMAGE_TAG_butenroma_dz4_users}}"

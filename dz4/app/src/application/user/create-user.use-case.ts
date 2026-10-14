@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { InvalidEmailError } from '../../domain/user/user.errors'
 import { User } from '../../domain/user/user'
-import type { UserRepository } from '../../domain/user/user.repository'
+import { UserRepository } from '../../domain/user/user.repository'
 
 export type CreateUserInput = {
   name: string

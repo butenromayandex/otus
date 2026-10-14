@@ -4,7 +4,7 @@ import {
   UserNotFoundError,
 } from '../../domain/user/user.errors'
 import type { User } from '../../domain/user/user'
-import type { UserRepository } from '../../domain/user/user.repository'
+import { UserRepository } from '../../domain/user/user.repository'
 
 export type UpdateUserInput = {
   id: string

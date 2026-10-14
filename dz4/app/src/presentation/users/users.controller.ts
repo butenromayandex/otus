@@ -12,11 +12,11 @@ import {
   Post,
   Put,
 } from '@nestjs/common'
-import type { CreateUserUseCase } from '../../application/user/create-user.use-case'
-import type { DeleteUserUseCase } from '../../application/user/delete-user.use-case'
-import type { GetUserUseCase } from '../../application/user/get-user.use-case'
-import type { GetUsersUseCase } from '../../application/user/get-users.use-case'
-import type { UpdateUserUseCase } from '../../application/user/update-user.use-case'
+import { CreateUserUseCase } from '../../application/user/create-user.use-case'
+import { DeleteUserUseCase } from '../../application/user/delete-user.use-case'
+import { GetUserUseCase } from '../../application/user/get-user.use-case'
+import { GetUsersUseCase } from '../../application/user/get-users.use-case'
+import { UpdateUserUseCase } from '../../application/user/update-user.use-case'
 import {
   EmailAlreadyExistsError,
   InvalidEmailError,

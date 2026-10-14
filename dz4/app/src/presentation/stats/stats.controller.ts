@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common'
-import type {
+import {
   GetStatsUseCase,
-  StatsResult,
+  type StatsResult,
 } from '../../application/user/get-stats.use-case'
 
 @Controller('stats')

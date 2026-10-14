@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import type { UserRepository } from '../../domain/user/user.repository'
+import { UserRepository } from '../../domain/user/user.repository'
 
 export type StatsResult = {
   usersCount: number
