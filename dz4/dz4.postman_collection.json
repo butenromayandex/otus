@@ -1,0 +1,204 @@
+{
+  "info": {
+    "name": "dz4-otus-api",
+    "description": "CRUD пользователей через Ingress arch.homework",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://arch.homework"
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "userEmail",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "GET /healthz",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test('status OK', function () {",
+              "  pm.expect(pm.response.json().status).to.eql('OK');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/healthz"
+      }
+    },
+    {
+      "name": "POST /users (create)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const email = `user-${Date.now()}@example.com`;",
+              "pm.collectionVariables.set('userEmail', email);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "pm.test('user created', function () {",
+              "  const user = pm.response.json();",
+              "  pm.expect(user).to.have.property('id');",
+              "  pm.expect(user.name).to.eql('Roma Test');",
+              "  pm.expect(user.email).to.eql(pm.collectionVariables.get('userEmail'));",
+              "  pm.expect(user.age).to.eql(30);",
+              "  pm.collectionVariables.set('userId', user.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Roma Test\",\n  \"email\": \"{{userEmail}}\",\n  \"age\": 30\n}"
+        },
+        "url": "{{baseUrl}}/users"
+      }
+    },
+    {
+      "name": "GET /users (list)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test('array of users', function () {",
+              "  const users = pm.response.json();",
+              "  pm.expect(users).to.be.an('array');",
+              "  pm.expect(users.length).to.be.at.least(1);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/users"
+      }
+    },
+    {
+      "name": "GET /users/:id (get)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test('user by id', function () {",
+              "  const user = pm.response.json();",
+              "  pm.expect(user.id).to.eql(pm.collectionVariables.get('userId'));",
+              "  pm.expect(user.email).to.eql(pm.collectionVariables.get('userEmail'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/users/{{userId}}"
+      }
+    },
+    {
+      "name": "PUT /users/:id (update)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test('user updated', function () {",
+              "  const user = pm.response.json();",
+              "  pm.expect(user.id).to.eql(pm.collectionVariables.get('userId'));",
+              "  pm.expect(user.name).to.eql('Roma Updated');",
+              "  pm.expect(user.age).to.eql(31);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Roma Updated\",\n  \"email\": \"{{userEmail}}\",\n  \"age\": 31\n}"
+        },
+        "url": "{{baseUrl}}/users/{{userId}}"
+      }
+    },
+    {
+      "name": "DELETE /users/:id (delete)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 204', function () {",
+              "  pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/users/{{userId}}"
+      }
+    }
+  ]
+}

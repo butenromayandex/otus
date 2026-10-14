@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.postgres.host }}
+  labels:
+    {{- include "chart.postgres.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ .Values.postgres.host }}
+  replicas: {{ .Values.postgres.replicas }}
+  selector:
+    matchLabels:
+      {{- include "chart.postgres.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "chart.postgres.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: {{ .Values.postgres.port }}
+              protocol: TCP
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.secretName }}
+                  key: database
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.secretName }}
+                  key: user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.secretName }}
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+  {{- if .Values.postgres.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes:
+          {{- toYaml .Values.postgres.persistence.accessModes | nindent 10 }}
+        storageClassName: {{ .Values.postgres.persistence.storageClass | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.persistence.size | quote }}
+  {{- end }}

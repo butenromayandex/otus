@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "chart.fullname" . }}-stats
+spec:
+  schedule: "* * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 60
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: stats
+              image: curlimages/curl:8.5.0
+              command:
+                - curl
+                - -sf
+                - http://{{ include "chart.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/stats
