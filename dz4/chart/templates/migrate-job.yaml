@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: api-migrate
+  name: {{ include "chart.fullname" .  }}-api-migrate-job
 spec:
   backoffLimit: 4
   ttlSecondsAfterFinished: 300
@@ -9,32 +9,32 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: migrate
-          image: api:latest
+        - name: {{ include "chart.fullname" .  }}-api-migrate-job
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           command: ['node', 'dist/migrate.js']
           env:
             - name: POSTGRES_HOST
               valueFrom:
                 secretKeyRef:
-                  name: postgres
+                  name: {{ .Values.postgres.secretName }}
                   key: host
             - name: POSTGRES_PORT
               valueFrom:
                 secretKeyRef:
-                  name: postgres
+                  name: {{ .Values.postgres.secretName }}
                   key: port
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: postgres
+                  name: {{ .Values.postgres.secretName }}
                   key: user
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgres
+                  name: {{ .Values.postgres.secretName }}
                   key: password
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: postgres
+                  name: {{ .Values.postgres.secretName }}
                   key: database

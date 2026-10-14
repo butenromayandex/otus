@@ -1,0 +1,16 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: dz4
+build:
+  artifacts:
+    - image: api
+      context: app
+      docker:
+        dockerfile: Dockerfile
+manifests:
+  rawYaml:
+    - k8s/pg.yaml
+    - k8s/migrate-job.yaml
+deploy:
+  kubectl: {}

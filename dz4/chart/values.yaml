@@ -1,0 +1,56 @@
+replicaCount: 1
+
+config:
+  NODE_ENV: development
+
+image:
+  repository: butenroma/dz4-users
+  tag: "0.0.1"
+  pullPolicy: IfNotPresent
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+postgres:
+  replicas: 1
+  persistence:
+    enabled: true
+    storageClass: dz4-storage
+    accessModes:
+    - ReadWriteOnce
+    size: 1Gi
+  secretName: postgres
+  image:
+    repository: postgres
+    tag: 16-alpine
+  host: postgres
+  port: "5432"
+  user: admin
+  database: otus
+  password: ""
