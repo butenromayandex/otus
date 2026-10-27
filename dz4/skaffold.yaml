@@ -1,0 +1,23 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: dz4
+build:
+  artifacts:
+  - image: butenroma/dz4-users
+    context: app
+    docker:
+      dockerfile: Dockerfile
+  local:
+    push: false
+deploy:
+  helm:
+    releases:
+    - name: homework
+      chartPath: chart
+      setValues:
+        postgres.password: qwerty
+        image.pullPolicy: IfNotPresent
+      setValueTemplates:
+        image.repository: "{{.IMAGE_REPO_butenroma_dz4_users}}"
+        image.tag: "{{.IMAGE_TAG_butenroma_dz4_users}}"
