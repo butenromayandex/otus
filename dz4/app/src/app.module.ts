@@ -18,15 +18,6 @@ import { AllExceptionsFilter } from './presentation/filters/all-exceptions.filte
 import { HealthController } from './presentation/health/health.controller'
 import { MetricsInterceptor } from './presentation/metrics/metrics.interceptor'
 import { UsersModule } from './users.module'
-import {
-  makeCounterProvider,
-  makeHistogramProvider,
-  PrometheusModule,
-} from '@willsoto/nestjs-prometheus'
-import { APP_INTERCEPTOR } from '@nestjs/core'
-import { MetricsInterceptor } from './presentation/metrics/metrics.interceptor'
-import { ChaosController } from './presentation/chaos/chaos.controller'
-import { RunChaosUseCase } from './application/chaos/run-chaos.use-case'
 
 @Module({
   imports: [
@@ -45,6 +36,7 @@ import { RunChaosUseCase } from './application/chaos/run-chaos.use-case'
   controllers: [AppController, HealthController, ChaosController],
   providers: [
     AppService,
+    AppLifecycleService,
     makeCounterProvider({
       name: 'http_requests_total',
       help: 'Total number of HTTP requests',
@@ -59,6 +51,10 @@ import { RunChaosUseCase } from './application/chaos/run-chaos.use-case'
     {
       provide: APP_INTERCEPTOR,
       useClass: MetricsInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
     RunChaosUseCase,
   ],
