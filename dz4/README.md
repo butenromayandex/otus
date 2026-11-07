@@ -31,3 +31,18 @@ npx newman run dz4.postman_collection.json
 ```bash
 ./_rollback.sh
 ```
+
+## Сборка образа (amd64 + arm64)
+
+Из каталога `app/`:
+
+```bash
+docker build --platform linux/arm64 -t butenroma/dz4-users:0.0.1-arm64 .
+docker build --platform linux/amd64 -t butenroma/dz4-users:0.0.1-amd64 .
+docker push butenroma/dz4-users:0.0.1-arm64
+docker push butenroma/dz4-users:0.0.1-amd64
+docker manifest create butenroma/dz4-users:0.0.1 \
+  --amend butenroma/dz4-users:0.0.1-arm64 \
+  --amend butenroma/dz4-users:0.0.1-amd64
+docker manifest push butenroma/dz4-users:0.0.1
+```

@@ -1,4 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing'
+import { Logger } from 'nestjs-pino'
 import { CreateUserUseCase } from '../../application/user/create-user.use-case'
 import { DeleteUserUseCase } from '../../application/user/delete-user.use-case'
 import { GetUserUseCase } from '../../application/user/get-user.use-case'
@@ -19,6 +20,14 @@ describe('UsersController', () => {
         CreateUserUseCase,
         UpdateUserUseCase,
         DeleteUserUseCase,
+        {
+          provide: Logger,
+          useValue: {
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+          },
+        },
         {
           provide: UserRepository,
           useValue: {

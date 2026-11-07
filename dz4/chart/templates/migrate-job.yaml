@@ -12,6 +12,9 @@ spec:
         - name: {{ include "chart.fullname" .  }}-api-migrate-job
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           command: ['node', 'dist/migrate.js']
+          envFrom:
+            - configMapRef:
+                name: {{ include "chart.fullname" . }}-config
           env:
             - name: POSTGRES_HOST
               valueFrom:

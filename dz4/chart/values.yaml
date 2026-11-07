@@ -2,6 +2,7 @@ replicaCount: 1
 
 config:
   NODE_ENV: development
+  LOG_LEVEL: info
 
 image:
   repository: butenroma/dz4-users

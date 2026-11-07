@@ -12,6 +12,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common'
+import { Logger } from 'nestjs-pino'
 import { CreateUserUseCase } from '../../application/user/create-user.use-case'
 import { DeleteUserUseCase } from '../../application/user/delete-user.use-case'
 import { GetUserUseCase } from '../../application/user/get-user.use-case'
@@ -33,6 +34,7 @@ type UserBody = {
 @Controller('users')
 export class UsersController {
   constructor(
+    private readonly logger: Logger,
     private readonly getUsersUseCase: GetUsersUseCase,
     private readonly getUserUseCase: GetUserUseCase,
     private readonly createUserUseCase: CreateUserUseCase,
@@ -53,7 +55,11 @@ export class UsersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createUser(@Body() body: UserBody): Promise<User> {
-    return await this.mapErrors(() => this.createUserUseCase.execute(body))
+    const user = await this.mapErrors(() =>
+      this.createUserUseCase.execute(body),
+    )
+    this.logger.log(`создан пользователь ${user.id}`)
+    return user
   }
 
   @Put(':id')
@@ -61,15 +67,18 @@ export class UsersController {
     @Param('id') id: string,
     @Body() body: UserBody,
   ): Promise<User> {
-    return await this.mapErrors(() =>
+    const user = await this.mapErrors(() =>
       this.updateUserUseCase.execute({ id, ...body }),
     )
+    this.logger.log(`обновлен пользователь ${user.id}`)
+    return user
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param('id') id: string): Promise<void> {
     await this.mapErrors(() => this.deleteUserUseCase.execute(id))
+    this.logger.log(`удален пользователь ${id}`)
   }
 
   private async mapErrors<T>(action: () => Promise<T>): Promise<T> {
@@ -77,9 +86,11 @@ export class UsersController {
       return await action()
     } catch (error) {
       if (error instanceof InvalidEmailError) {
+        this.logger.warn(`ошибка валидации: ${error.message}`)
         throw new BadRequestException(error.message)
       }
       if (error instanceof EmailAlreadyExistsError) {
+        this.logger.warn(`ошибка валидации: ${error.message}`)
         throw new ConflictException(error.message)
       }
       if (error instanceof UserNotFoundError) {

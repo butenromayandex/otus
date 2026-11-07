@@ -6,3 +6,4 @@ metadata:
     {{- include "chart.labels" . | nindent 4 }}
 data:
   NODE_ENV: {{ .Values.config.NODE_ENV | quote }}
+  LOG_LEVEL: {{ .Values.config.LOG_LEVEL | default "info" | quote }}
