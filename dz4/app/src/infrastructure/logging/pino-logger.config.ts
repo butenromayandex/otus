@@ -16,16 +16,7 @@ export function buildPinoLoggerParams(): Params {
   return {
     pinoHttp: {
       logger,
-      autoLogging: {
-        ignore: (req) => {
-          const url = req.url ?? ''
-          return (
-            url.includes('/healthz') ||
-            url.includes('/metrics') ||
-            url === '/'
-          )
-        },
-      },
+      customLogLevel: () => 'info',
       customProps: (req) => ({
         ip: clientIp(req as Request),
       }),
@@ -36,9 +27,9 @@ export function buildPinoLoggerParams(): Params {
         }),
       },
       customSuccessMessage: (req, res) =>
-        `${req.method} ${req.url} ${res.statusCode}`,
+        `${req.method} ${req.url} ${clientIp(req as Request)} ${res.statusCode}`,
       customErrorMessage: (req, res) =>
-        `${req.method} ${req.url} ${res.statusCode}`,
+        `${req.method} ${req.url} ${clientIp(req as Request)} ${res.statusCode}`,
     },
   }
 }

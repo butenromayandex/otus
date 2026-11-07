@@ -6,12 +6,12 @@ import {
   HttpStatus,
 } from '@nestjs/common'
 import { QueryFailedError } from 'typeorm'
-import { Logger } from 'nestjs-pino'
+import { PinoLogger } from 'nestjs-pino'
 import type { Request, Response } from 'express'
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(private readonly logger: Logger) {}
+  constructor(private readonly logger: PinoLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
