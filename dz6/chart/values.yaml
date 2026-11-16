@@ -1,0 +1,56 @@
+namespace: logging
+
+elasticsearch:
+  replicas: 2
+  image: elasticsearch:8.17.0
+  clusterName: elastic
+  javaOpts: "-Xms512m -Xmx512m"
+  httpPort: 9200
+  transportPort: 9300
+  storage: 1Gi
+  storageClass: standard
+  serviceName: elastic-service
+  headlessServiceName: headless-service
+  security:
+    enabled: false
+    httpSsl: false
+    transportSsl: false
+  resources:
+    requests:
+      cpu: 25m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+kibana:
+  replicas: 1
+  image: docker.elastic.co/kibana/kibana:8.17.0
+  port: 5601
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    className: nginx
+    host: kibana.homework
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+fluentBit:
+  image: fluent/fluent-bit:3.1.9
+  logPath: /var/log
+  containersPath: /var/lib/docker/containers
+  positionPath: /var/lib/fluent-bit
+  indexPrefix: fluent-bit-logs
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
