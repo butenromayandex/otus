@@ -1,0 +1,341 @@
+# elasticsearch statefulset
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elastic-statefulset
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: elastic
+spec:
+  serviceName: {{ .Values.elasticsearch.headlessServiceName }}
+  replicas: {{ .Values.elasticsearch.replicas }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: elastic
+  template:
+    metadata:
+      labels:
+        app: elastic
+    spec:
+      containers:
+      - name: elastic-container
+        image: {{ .Values.elasticsearch.image }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.elasticsearch.httpPort }}
+        - name: transport
+          containerPort: {{ .Values.elasticsearch.transportPort }}
+        env:
+        - name: node.name
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: cluster.name
+          value: {{ .Values.elasticsearch.clusterName | quote }}
+        - name: discovery.seed_hosts
+          value: {{ .Values.elasticsearch.headlessServiceName | quote }}
+        - name: cluster.initial_master_nodes
+          value: {{ include "elasticsearch.initialMasterNodes" . | quote }}
+        - name: xpack.security.enabled
+          value: {{ .Values.elasticsearch.security.enabled | quote }}
+        - name: xpack.security.http.ssl.enabled
+          value: {{ .Values.elasticsearch.security.httpSsl | quote }}
+        - name: xpack.security.transport.ssl.enabled
+          value: {{ .Values.elasticsearch.security.transportSsl | quote }}
+        - name: ES_JAVA_OPTS
+          value: {{ .Values.elasticsearch.javaOpts | quote }}
+        readinessProbe:
+          httpGet:
+            path: /_cluster/health?local=true
+            port: http
+          initialDelaySeconds: 5
+        resources:
+          {{- toYaml .Values.elasticsearch.resources | nindent 10 }}
+        volumeMounts:
+        - name: elastic-volume
+          mountPath: /usr/share/elasticsearch/data
+  volumeClaimTemplates:
+  - metadata:
+      name: elastic-volume
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.elasticsearch.storage }}
+      storageClassName: {{ .Values.elasticsearch.storageClass }}
+
+---
+
+# headless service for elasticsearch
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.elasticsearch.headlessServiceName }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: headless
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: elastic
+  ports:
+    - name: transport
+      port: {{ .Values.elasticsearch.transportPort }}
+      targetPort: transport
+
+---
+
+# elasticsearch service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.elasticsearch.serviceName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: elastic
+  ports:
+    - name: http
+      port: {{ .Values.elasticsearch.httpPort }}
+      targetPort: http
+
+---
+
+# kibana deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.kibana.replicas }}
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+        - name: kibana
+          image: {{ .Values.kibana.image }}
+          ports:
+            - containerPort: {{ .Values.kibana.port }}
+              name: http
+          env:
+            - name: ELASTICSEARCH_HOSTS
+              value: {{ printf "http://%s:%v" .Values.elasticsearch.serviceName .Values.elasticsearch.httpPort | quote }}
+            - name: SERVER_NAME
+              value: {{ .Values.kibana.ingress.host | quote }}
+            - name: SERVER_PUBLICBASEURL
+              value: {{ printf "http://%s" .Values.kibana.ingress.host | quote }}
+          resources:
+            {{- toYaml .Values.kibana.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+---
+
+# kibana service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.kibana.service.type }}
+  selector:
+    app: kibana
+  ports:
+    - name: http
+      port: {{ .Values.kibana.port }}
+      targetPort: http
+      {{- if and (eq .Values.kibana.service.type "NodePort") .Values.kibana.service.nodePort }}
+      nodePort: {{ .Values.kibana.service.nodePort }}
+      {{- end }}
+
+---
+
+{{- if .Values.kibana.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kibana
+  namespace: {{ .Values.namespace }}
+spec:
+  ingressClassName: {{ .Values.kibana.ingress.className }}
+  rules:
+    - host: {{ .Values.kibana.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana
+                port:
+                  number: {{ .Values.kibana.port }}
+{{- end }}
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluent-bit
+  namespace: {{ .Values.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluent-bit
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fluent-bit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fluent-bit
+subjects:
+  - kind: ServiceAccount
+    name: fluent-bit
+    namespace: {{ .Values.namespace }}
+
+---
+
+# Fluent Bit DaemonSet
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      serviceAccountName: fluent-bit
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: fluent-bit
+          image: {{ .Values.fluentBit.image }}
+          resources:
+            {{- toYaml .Values.fluentBit.resources | nindent 12 }}
+          volumeMounts:
+            - name: varlog
+              mountPath: {{ .Values.fluentBit.logPath }}
+              readOnly: true
+            - name: varlibdockercontainers
+              mountPath: {{ .Values.fluentBit.containersPath }}
+              readOnly: true
+            - name: config
+              mountPath: /fluent-bit/etc/
+            - name: varlibfluentbit
+              mountPath: {{ .Values.fluentBit.positionPath }}
+      volumes:
+        - name: varlog
+          hostPath:
+            path: {{ .Values.fluentBit.logPath }}
+        - name: varlibdockercontainers
+          hostPath:
+            path: {{ .Values.fluentBit.containersPath }}
+        - name: config
+          configMap:
+            name: fluent-bit-config
+        - name: varlibfluentbit
+          hostPath:
+            path: {{ .Values.fluentBit.positionPath }}
+            type: DirectoryOrCreate
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: {{ .Values.namespace }}
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         5
+        Daemon        Off
+        Log_Level     info
+        Parsers_File  parsers.conf
+
+    [INPUT]
+        Name              tail
+        Tag               kube.*
+        Path              /var/log/containers/*.log
+        Parser            cri
+        DB                /var/lib/fluent-bit/flb_kube.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+
+    [FILTER]
+        Name              parser
+        Match             kube.*
+        Key_Name          message
+        Parser            json
+        Reserve_Data      On
+        Preserve_Key      On
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Merge_Log           On
+        Keep_Log            Off
+
+    [OUTPUT]
+        Name               es
+        Match              *
+        Host               {{ .Values.elasticsearch.serviceName }}
+        Port               {{ .Values.elasticsearch.httpPort }}
+        Logstash_Format    On
+        Logstash_Prefix    {{ .Values.fluentBit.indexPrefix }}
+        Logstash_DateFormat %Y.%m.%d
+        Suppress_Type_Name On
+        Replace_Dots       On
+
+  parsers.conf: |
+    [PARSER]
+        Name        cri
+        Format      regex
+        Regex       ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+    [PARSER]
+        Name        docker
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+
+    [PARSER]
+        Name        json
+        Format      json
