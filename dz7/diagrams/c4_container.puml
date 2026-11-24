@@ -1,0 +1,35 @@
+@startuml
+title SmartHome BFF — Container Diagram (C2)
+
+top to bottom direction
+
+!include https://raw.githubusercontent.com/butenromayandex/C4/main/C4_Container.puml
+
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+!include FONTAWESOME/users.puml
+!include DEVICONS/go.puml
+
+Person(user, "Пользователи", "Пользователи системы", $sprite="users")
+
+System_Boundary(k8s, "Kubernetes cluster") {
+
+    Container(gateway, "Ingress / API Gateway", "Traefik / NGINX", "HTTPS (TLS 1.2+), маршрутизация, rate limiting")
+
+    Container(bff, "BFF", "Go", "Агрегация бэкендов, владеет токенами, сессии пользователей", $sprite="go")
+
+    ContainerDb(sessions, "Session Store", "Redis", "Сессии: TTL, TCP-TLS, ACL")
+
+    Container(keycloak, "Keycloak", "Keycloak", "OIDC IdP: аутентификация, выпуск токенов (самостоятельно хостится в кластере)")
+
+    Container(usersvc, "User Service", "Go", "Простая админка, данные пользователей")
+}
+
+Rel(user, gateway, "HTTPS, cookie BFF_SESSION (HttpOnly, Secure, SameSite=Lax)")
+Rel(gateway, bff, "HTTP/mTLS внутри кластера")
+Rel(bff, sessions, "Запись/чтение сессии, токены лежат на сервере, НЕ в браузере")
+Rel(bff, keycloak, "OIDC: /authorize, /token (Authorization Code + PKCE)", "HTTPS")
+Rel(bff, usersvc, "Проверка JWT, gRPC/REST")
+
+SHOW_LEGEND()
+@enduml

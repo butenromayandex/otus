@@ -1,0 +1,63 @@
+@startuml
+title Аутентификация через BFF: Authorization Code + PKCE
+
+' autonumber — нумерует каждый шаг, формат можно задать
+autonumber "<b>[000]"
+
+' actors слева, participants правее; порядок = порядок колонок
+actor "SPA\n(браузер)" as SPA
+participant "BFF" as BFF #LightBlue
+participant "Keycloak" as KC
+participant "User Service" as US
+database "Session Store\n(Redis)" as Redis
+
+== Вход (Authorization Code Flow + PKCE) ==
+
+SPA -> BFF: GET /auth/login
+activate BFF
+BFF -> BFF: генерирует state +\ncode_verifier / code_challenge
+BFF --> SPA: 302 на Keycloak /authorize\nSet-Cookie: state (HttpOnly)   ' --> — ответ (пунктир)
+deactivate BFF
+
+SPA -> KC: GET /authorize?code_challenge=...&S256
+activate KC
+KC --> SPA: страница логина (+MFA)
+SPA -> KC: логин / пароль
+KC --> SPA: 302 на BFF /auth/callback?code=...&state=...
+deactivate KC
+
+SPA -> BFF: GET /auth/callback?code=...&state=...
+activate BFF
+BFF -> BFF: state из URL == state из cookie?
+
+alt state совпал                              ' alt/else — ветвления
+    BFF -> KC: POST /token (code + code_verifier)
+    KC --> BFF: id_token, access_token, refresh_token
+    BFF -> Redis: SET session:{id} → токены (TTL 8h)
+    activate Redis
+    Redis --> BFF: OK
+    deactivate Redis
+    BFF --> SPA: 302 /\nSet-Cookie: BFF_SESSION={id};HttpOnly;Secure;SameSite=Lax
+else state не совпал
+    BFF --> SPA: 400 (защита от CSRF)
+end
+deactivate BFF
+
+== Обычный запрос ==
+
+SPA -> BFF: GET /api/profile (cookie BFF_SESSION, токены не передаются!)
+activate BFF
+BFF -> Redis: GET session:{id}
+BFF -> BFF: проверяет/обновляет access_token
+BFF -> US: GET /profile\nAuthorization: Bearer <access_token>
+US --> BFF: 200
+BFF --> SPA: 200 (только JSON, без токенов)
+deactivate BFF
+
+note over BFF, Redis
+  Ключевая идея BFF-паттерна:
+  refresh_token и access_token живут
+  только на сервере, браузер видит
+  лишь непрозрачный id сессии в cookie
+end note
+@enduml
